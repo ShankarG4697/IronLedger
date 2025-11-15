@@ -13,7 +13,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -41,11 +41,8 @@ public class Account {
     @Column(nullable = false, length = 3)
     private String currency;
 
-    @NotNull(message = "Status is required")
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @Builder.Default
-    private AccountStatus status = AccountStatus.ACTIVE;
+    @Column(nullable = false)
+    private Integer status;
 
     @NotNull(message = "Available balance is required")
     @PositiveOrZero(message = "Available balance cannot be negative")
@@ -61,33 +58,17 @@ public class Account {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
-
-    /**
-     * Enum for account status
-     */
-    public enum AccountStatus {
-        ACTIVE,
-        DISABLED,
-        CLOSED
-    }
+    private LocalDateTime updatedAt;
 
     /**
      * Custom setter for currency to ensure uppercase
      */
     public void setCurrency(String currency) {
         this.currency = currency != null ? currency.toUpperCase() : null;
-    }
-
-    /**
-     * Check if an account is active
-     */
-    public boolean isActive() {
-        return AccountStatus.ACTIVE.equals(this.status);
     }
 
     /**

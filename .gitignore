@@ -93,8 +93,8 @@ yarn-debug.log
 .pnpm-debug.log
 
 # IDEs / editors
-.vscode/
-.idea/
+.vscode
+.idea
 *.iml
 
 # Other common

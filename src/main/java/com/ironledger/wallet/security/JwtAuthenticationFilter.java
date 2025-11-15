@@ -16,8 +16,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
@@ -26,6 +29,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
+
+    // Simple cache to avoid repeated DB queries for the same user within a short time window
+    private final Map<UUID, CachedUser> userCache = new ConcurrentHashMap<>();
+    private static final long CACHE_TTL_SECONDS = 60; // Cache for 1 minute
+
+    private static class CachedUser {
+        final User user;
+        final Instant cachedAt;
+
+        CachedUser(User user) {
+            this.user = user;
+            this.cachedAt = Instant.now();
+        }
+
+        boolean isExpired() {
+            return Instant.now().isAfter(cachedAt.plusSeconds(CACHE_TTL_SECONDS));
+        }
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -47,11 +68,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             !TokenUtils.isExpired(claims)) {
 
                         UUID userId = UUID.fromString(TokenUtils.getUserId(claims));
-                        Optional<User> userOpt = userRepository.findById(userId);
+                        
+                        // Try cache first, then database
+                        User user = getUserFromCacheOrDatabase(userId);
 
-                        if (userOpt.isPresent()) {
-                            User user = userOpt.get();
-
+                        if (user != null) {
                             // Validate passwordVersion match
                             Integer tokenVersion = TokenUtils.getPasswordVersion(claims);
                             if (tokenVersion.equals(user.getPasswordVersion())) {
@@ -65,6 +86,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                                 SecurityContextHolder.getContext().setAuthentication(auth);
+                            } else {
+                                // Password version mismatch - invalidate cache
+                                userCache.remove(userId);
                             }
                         }
                     }
@@ -75,5 +99,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Get user from cache if available and not expired, otherwise fetch from database.
+     * This significantly reduces database queries for authenticated requests.
+     */
+    private User getUserFromCacheOrDatabase(UUID userId) {
+        CachedUser cached = userCache.get(userId);
+        
+        // Check cache first
+        if (cached != null && !cached.isExpired()) {
+            return cached.user;
+        }
+
+        // Cache miss or expired - fetch from database
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            userCache.put(userId, new CachedUser(user));
+            return user;
+        }
+
+        // User not found - remove from cache if present
+        userCache.remove(userId);
+        return null;
     }
 }

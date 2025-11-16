@@ -44,7 +44,7 @@ public class AuthController {
     }
 
     // ---------------------------------------------------------------------
-    // LOGOUT
+    // RESET PASSWORD
     // ---------------------------------------------------------------------
     @PostMapping("/reset-password")
     public ResetPassword resetPassword(@RequestBody ResetPasswordRequest req, HttpServletRequest request) {

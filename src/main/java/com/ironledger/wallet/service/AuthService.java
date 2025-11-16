@@ -69,6 +69,8 @@ public class AuthService {
 
         userRepository.save(user);
 
+        user = userRepository.findById(user.getId()).orElseThrow();
+
         logAttempt(user.getId(), true, "User Created!", ipAddress, userAgent);
 
         return new SignupResponse(
@@ -259,7 +261,7 @@ public class AuthService {
         }
 
         session.setRevokedAt(OffsetDateTime.now(ZoneOffset.UTC));
-        authSessionRepository.save(session);
+        session = authSessionRepository.save(session);
         return LOGOUT_SUCCESSFUL_MESSAGE;
     }
 }

@@ -77,7 +77,7 @@ git push origin development
 If `development` has the authoritative code and `master` was created incorrectly:
 
 ```bash
-# Backup current master (optional)
+# Backup current master (recommended)
 git branch master-backup master
 
 # Reset master to development
@@ -86,26 +86,27 @@ git reset --hard development
 git push --force origin master
 ```
 
-⚠️ **Warning:** This will overwrite all commits in `master` and may break any PRs or references to the old master commits.
+⚠️ **Warning:** This will overwrite all commits in `master` and may break any PRs or references to the old master commits. Always create a backup before proceeding.
 
 ### Option 3: Recreate Development from Master
 
 If `master` has the authoritative code and you want to recreate `development`:
 
 ```bash
-# Backup current development (optional)
+# Backup current development (recommended)
 git branch development-backup development
 
 # Switch to master first (required to delete development)
 git checkout master
 
 # Delete and recreate development from master
+# Using -D to force delete since branches are unrelated
 git branch -D development
 git checkout -b development master
 git push --force origin development
 ```
 
-⚠️ **Warning:** This will overwrite all commits in `development`.
+⚠️ **Warning:** This will permanently overwrite all commits in `development`. Always create a backup before proceeding. The `-D` flag force-deletes the branch even with unmerged changes.
 
 ### Option 4: Merge Development into Master (Alternative)
 

@@ -1,6 +1,8 @@
 package com.ironledger.wallet.security;
 
+import com.ironledger.wallet.entity.AuthSession;
 import com.ironledger.wallet.entity.User;
+import com.ironledger.wallet.repository.AuthSessionRepository;
 import com.ironledger.wallet.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -29,6 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
+    private final AuthSessionRepository authSessionRepository;
 
     // Simple cache to avoid repeated DB queries for the same user within a short time window
     private final Map<UUID, CachedUser> userCache = new ConcurrentHashMap<>();
@@ -68,11 +71,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             !TokenUtils.isExpired(claims)) {
 
                         UUID userId = UUID.fromString(TokenUtils.getUserId(claims));
-                        
-                        // Try cache first, then database
-                        User user = getUserFromCacheOrDatabase(userId);
+                        UUID sessionId = UUID.fromString(request.getParameter("sessionId"));
 
-                        if (user != null) {
+                        Optional<User> userOpt = userRepository.findById(userId);
+                        boolean userSession = authSessionRepository.existsActiveSession(userId, sessionId);
+
+                        if (userOpt.isPresent() && userSession) {
+                            User user = userOpt.get();
+
                             // Validate passwordVersion match
                             Integer tokenVersion = TokenUtils.getPasswordVersion(claims);
                             if (tokenVersion.equals(user.getPasswordVersion())) {
@@ -90,12 +96,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 // Password version mismatch - invalidate cache
                                 userCache.remove(userId);
                             }
+                        } else{
+                            log.warn("JWT Filter: User session is invalid");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("User Session is expired or invalid");
+                            SecurityContextHolder.clearContext();
                         }
+                    } else{
+                        log.warn("JWT Filter: token is expired or invalid");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("Token is expired or invalid");
                     }
                 }
             }
         } catch (Exception e) {
             log.warn("JWT Filter error: {}", e.getMessage());
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().write("Invalid token");
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
@@ -107,7 +125,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private User getUserFromCacheOrDatabase(UUID userId) {
         CachedUser cached = userCache.get(userId);
-        
+
         // Check cache first
         if (cached != null && !cached.isExpired()) {
             return cached.user;

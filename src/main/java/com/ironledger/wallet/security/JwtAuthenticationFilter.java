@@ -1,6 +1,8 @@
 package com.ironledger.wallet.security;
 
+import com.ironledger.wallet.entity.AuthSession;
 import com.ironledger.wallet.entity.User;
+import com.ironledger.wallet.repository.AuthSessionRepository;
 import com.ironledger.wallet.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -26,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
+    private final AuthSessionRepository authSessionRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -47,9 +50,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             !TokenUtils.isExpired(claims)) {
 
                         UUID userId = UUID.fromString(TokenUtils.getUserId(claims));
-                        Optional<User> userOpt = userRepository.findById(userId);
+                        UUID sessionId = UUID.fromString(request.getParameter("sessionId"));
 
-                        if (userOpt.isPresent()) {
+                        Optional<User> userOpt = userRepository.findById(userId);
+                        boolean userSession = authSessionRepository.existsActiveSession(userId, sessionId);
+
+                        if (userOpt.isPresent() && userSession) {
                             User user = userOpt.get();
 
                             // Validate passwordVersion match
@@ -66,12 +72,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                                 SecurityContextHolder.getContext().setAuthentication(auth);
                             }
+                        } else{
+                            log.warn("JWT Filter: User session is invalid");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("User Session is expired or invalid");
+                            SecurityContextHolder.clearContext();
                         }
+                    } else{
+                        log.warn("JWT Filter: token is expired or invalid");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("Token is expired or invalid");
                     }
                 }
             }
         } catch (Exception e) {
             log.warn("JWT Filter error: {}", e.getMessage());
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().write("Invalid token");
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

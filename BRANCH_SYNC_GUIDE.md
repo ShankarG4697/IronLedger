@@ -90,6 +90,9 @@ If `master` has the authoritative code and you want to recreate `development`:
 # Backup current development (optional)
 git branch development-backup development
 
+# Switch to master first (required to delete development)
+git checkout master
+
 # Delete and recreate development from master
 git branch -D development
 git checkout -b development master
@@ -105,9 +108,16 @@ For a one-time sync when you want to preserve both histories:
 ```bash
 # From development branch
 git checkout development
-git merge master --allow-unrelated-histories -m "Sync master changes into development"
+git merge master --allow-unrelated-histories
 
-# Resolve any conflicts, then push
+# Git will open an editor for the merge commit message
+# Review the message and save
+
+# Resolve any conflicts if prompted, then:
+git add .
+git commit
+
+# Push the changes
 git push origin development
 ```
 

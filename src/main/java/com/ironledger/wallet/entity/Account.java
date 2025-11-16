@@ -17,9 +17,17 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "core_account", indexes = {
-    @Index(name = "idx_account_status", columnList = "status")
-})
+@Table(
+        name = "core_account",
+        indexes = {
+                @Index(name = "idx_account_user_id", columnList = "user_id"),
+                @Index(name = "idx_account_currency", columnList = "currency"),
+                @Index(name = "idx_account_status", columnList = "status"),
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "unique_user_currency", columnNames = {"user_id", "currency"})
+        }
+)
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -27,6 +35,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class Account {
+
+    // ---------------------------------------------------------------------
+    // STATUS CONSTANTS (clean int model)
+    // ---------------------------------------------------------------------
+    public static final int ACTIVE = 1;
+    public static final int DISABLED = 0;
+    public static final int CLOSED = -1;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -38,7 +53,7 @@ public class Account {
 
     @NotNull(message = "Currency is required")
     @Pattern(regexp = "^[A-Z]{3}$", message = "Currency must be a 3-letter ISO code")
-    @Column(nullable = false, length = 3)
+    @Column(nullable = false, length = 3, updatable = false)
     private String currency;
 
     @Column(nullable = false)
@@ -64,47 +79,54 @@ public class Account {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    /**
-     * Custom setter for currency to ensure uppercase
-     */
-    public void setCurrency(String currency) {
-        this.currency = currency != null ? currency.toUpperCase() : null;
+    // ---------------------------------------------------------------------
+    // VALIDATION
+    // ---------------------------------------------------------------------
+
+    @PrePersist
+    public void onCreate() {
+        if (currency != null) {
+            currency = currency.toUpperCase();
+        }
+        if (status == null) {
+            status = ACTIVE;
+        }
+        if (balanceAvailable == null) balanceAvailable = 0L;
+        if (balancePending == null) balancePending = 0L;
     }
 
-    /**
-     * Debit available balance
-     */
-    public void debitAvailable(Long amount) {
-        if (amount == null || amount <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
+    // ---------------------------------------------------------------------
+    // STATUS HELPERS
+    // ---------------------------------------------------------------------
+
+    public boolean isActive() {
+        return status != null && status == ACTIVE;
+    }
+
+    public boolean isDisabled() {
+        return status != null && status == DISABLED;
+    }
+
+    public boolean isClosed() {
+        return status != null && status == CLOSED;
+    }
+
+    // ---------------------------------------------------------------------
+    // LEDGER GUARDS (NO ACTUAL BALANCE OPERATIONS IN ENTITY)
+    // ---------------------------------------------------------------------
+
+    public void assertCanDebit(long amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be > 0");
         }
-        if (this.balanceAvailable < amount) {
+        if (balanceAvailable < amount) {
             throw new IllegalStateException("Insufficient available balance");
         }
-        this.balanceAvailable -= amount;
     }
 
-    /**
-     * Credit available balance
-     */
-    public void creditAvailable(Long amount) {
-        if (amount == null || amount <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
+    public void assertAmountPositive(long amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be > 0");
         }
-        this.balanceAvailable += amount;
-    }
-
-    /**
-     * Move amount from pending to available
-     */
-    public void settlePending(Long amount) {
-        if (amount == null || amount <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        if (this.balancePending < amount) {
-            throw new IllegalStateException("Insufficient pending balance");
-        }
-        this.balancePending -= amount;
-        this.balanceAvailable += amount;
     }
 }

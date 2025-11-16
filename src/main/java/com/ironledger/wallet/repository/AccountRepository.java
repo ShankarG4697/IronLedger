@@ -22,7 +22,7 @@ import java.util.UUID;
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     /**
-     * Find account by ID with pessimistic write lock for concurrent balance updates.
+     * Find an account by ID with pessimistic write lock for concurrent balance updates.
      * Use this method when you need to update the account balance to prevent race conditions.
      *
      * @param id the account ID

@@ -8,8 +8,9 @@ import java.nio.charset.StandardCharsets;
 public class CustomPasswordEncoder implements PasswordEncoder {
 
     private static final int MAX_BYTES = 72;
+    private static final BCryptPasswordEncoder DELEGATE = new BCryptPasswordEncoder();
 
-    private final BCryptPasswordEncoder delegate = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder delegate = DELEGATE;
 
     @Override
     public String encode(CharSequence rawPassword) {

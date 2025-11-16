@@ -12,6 +12,7 @@ import com.ironledger.wallet.repository.AuthSessionRepository;
 import com.ironledger.wallet.repository.LoginAuditRepository;
 import com.ironledger.wallet.repository.UserRepository;
 import com.ironledger.wallet.security.JwtProvider;
+import com.ironledger.wallet.security.TokenHashUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -124,8 +125,8 @@ public class AuthService {
         String refreshToken = jwtProvider.generateRefreshToken(user, sessionId);
         String accessToken = jwtProvider.generateAccessToken(user);
 
-        // --- STEP 3: Update session with refresh hash ---
-        session.setRefreshTokenHash(refreshToken);
+        // --- STEP 3: Update session with refresh token hash (SHA-256, not BCrypt) ---
+        session.setRefreshTokenHash(TokenHashUtil.hashToken(refreshToken));
         authSessionRepository.save(session);
 
         return new AuthResponse(new UserDto(
@@ -145,7 +146,7 @@ public class AuthService {
         UUID userId = jwtProvider.extractUserId(rawRefreshToken);
         UUID sessionId = jwtProvider.extractSessionId(rawRefreshToken);
 
-        System.out.println("Refreshing token for user " + userId + " and session " + sessionId);
+        log.debug("Refreshing token for user {} and session {}", userId, sessionId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid refresh token"));
@@ -161,15 +162,15 @@ public class AuthService {
             throw new InvalidCredentialsException("Refresh token expired");
         }
 
-        if (!passwordEncoder.matches(rawRefreshToken, session.getRefreshTokenHash())) {
+        if (!TokenHashUtil.verifyToken(rawRefreshToken, session.getRefreshTokenHash())) {
             throw new InvalidCredentialsException("Invalid refresh token");
         }
 
-        // Token rotation
+        // Token rotation - generate new tokens and update stored hash
         String newAccessToken = jwtProvider.generateAccessToken(user);
         String newRefreshToken = jwtProvider.generateRefreshToken(user, session.getId());
 
-        session.setRefreshTokenHash(passwordEncoder.encode(newRefreshToken));
+        session.setRefreshTokenHash(TokenHashUtil.hashToken(newRefreshToken));
 
         return new TokenPair(newAccessToken, newRefreshToken);
     }
@@ -177,6 +178,7 @@ public class AuthService {
     // -------------------------------------------------------------------------
     // LOGOUT
     // -------------------------------------------------------------------------
+    @Transactional
     public String logout(UUID sessionId) {
         return authSessionRepository.findById(sessionId)
                 .map(this::buildLogoutMessage)

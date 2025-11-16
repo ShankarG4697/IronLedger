@@ -12,7 +12,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "auth_session", indexes = {
         @Index(name = "idx_auth_session_user_id", columnList = "user_id"),
-        @Index(name = "idx_auth_session_expires", columnList = "expires_at")
+        @Index(name = "idx_auth_session_expires", columnList = "expires_at"),
+        @Index(name = "idx_auth_session_revoked", columnList = "revoked_at")
 })
 @Getter
 @Setter
@@ -34,7 +35,7 @@ public class AuthSession {
 
     @NotNull
     @Column(name = "refresh_token_hash", nullable = false, columnDefinition = "TEXT")
-    private String refreshTokenHash;
+    private String refreshTokenHash;  // Note: Stores SHA-256 hash, not BCrypt
 
     @Column(name = "user_agent")
     private String userAgent;

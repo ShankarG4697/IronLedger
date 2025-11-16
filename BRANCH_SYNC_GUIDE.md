@@ -34,7 +34,7 @@ master branch:
 
 ## Recommended Solutions
 
-### Option 1: Sync Development to Master (Recommended)
+### Option 1: Merge Master into Development (Recommended)
 
 If you want to keep both branches and bring the performance improvements from `master` into `development`:
 
@@ -43,18 +43,24 @@ If you want to keep both branches and bring the performance improvements from `m
 git checkout development
 
 # Merge master into development (preserves history)
-git merge master --allow-unrelated-histories
+# The --no-commit flag lets you review the merge before committing
+git merge master --allow-unrelated-histories --no-commit
 
-# Resolve merge conflicts in:
+# Review the merge status
+git status
+
+# You will need to resolve conflicts in these files:
 # - README.md
-# - AuthController.java
-# - AuthSession.java
-# - CustomPasswordEncoder.java
-# - JwtAuthenticationFilter.java
-# - AuthService.java
-# (These files have different implementations in each branch)
+# - src/main/java/com/ironledger/wallet/controller/AuthController.java
+# - src/main/java/com/ironledger/wallet/entity/AuthSession.java
+# - src/main/java/com/ironledger/wallet/security/CustomPasswordEncoder.java
+# - src/main/java/com/ironledger/wallet/security/JwtAuthenticationFilter.java
+# - src/main/java/com/ironledger/wallet/service/AuthService.java
 
-# After resolving conflicts:
+# For each conflicted file, edit it to resolve conflicts
+# The master branch has performance optimizations that should generally be kept
+
+# After resolving all conflicts:
 git add .
 git commit -m "Merge master into development to sync performance improvements"
 
@@ -62,9 +68,9 @@ git commit -m "Merge master into development to sync performance improvements"
 git push origin development
 ```
 
-**Note:** This will require resolving conflicts in 6 files where both branches made different changes. The master branch has performance optimizations that should generally be kept during conflict resolution.
+**Why this works:** After merging with `--allow-unrelated-histories`, both branches will share a common history point (the merge commit), allowing future PRs in either direction.
 
-After this, both branches will share a common history and you can create PRs in either direction.
+**Time required:** 30-60 minutes to resolve conflicts carefully.
 
 ### Option 2: Recreate Master from Development
 
@@ -101,27 +107,30 @@ git push --force origin development
 
 ⚠️ **Warning:** This will overwrite all commits in `development`.
 
-### Option 4: Manual Merge with Unrelated Histories
+### Option 4: Merge Development into Master (Alternative)
 
-For a one-time sync when you want to preserve both histories:
+If you want to bring development's changes into master instead:
 
 ```bash
-# From development branch
-git checkout development
-git merge master --allow-unrelated-histories
+# Switch to master branch
+git checkout master
 
-# Git will open an editor for the merge commit message
-# Review the message and save
+# Merge development into master
+# The --no-commit flag lets you review the merge before committing
+git merge development --allow-unrelated-histories --no-commit
 
-# Resolve any conflicts if prompted, then:
+# Review and resolve any conflicts
+git status
+
+# After resolving conflicts:
 git add .
-git commit
+git commit -m "Merge development into master"
 
 # Push the changes
-git push origin development
+git push origin master
 ```
 
-This creates a merge commit that joins the two unrelated histories.
+**Note:** This approach makes sense if master should be the primary branch going forward.
 
 ## Best Practices Going Forward
 

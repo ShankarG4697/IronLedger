@@ -84,3 +84,9 @@ See [PERFORMANCE.md](PERFORMANCE.md) for detailed technical documentation.
 ## 🎯 Purpose
 
 IronLedger is a learning project designed to understand **how money systems actually work**, avoid critical design mistakes, and gain confidence in fintech.
+
+---
+
+## 📘 Branch Management
+
+This repository uses separate `master` and `development` branches with unrelated histories. If you're having trouble creating pull requests between branches, see [BRANCH_SYNC_GUIDE.md](BRANCH_SYNC_GUIDE.md) for detailed instructions on how to sync them.

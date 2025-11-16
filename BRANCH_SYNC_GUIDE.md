@@ -90,8 +90,9 @@ If `master` has the authoritative code and you want to recreate `development`:
 # Backup current development (optional)
 git branch development-backup development
 
-# Recreate development from master
-git checkout -B development master
+# Delete and recreate development from master
+git branch -D development
+git checkout -b development master
 git push --force origin development
 ```
 
@@ -138,10 +139,10 @@ git merge-base master development
 To see the divergence:
 
 ```bash
-# Commits in master not in development
+# Commits in development not in master
 git log master..development --oneline
 
-# Commits in development not in master
+# Commits in master not in development
 git log development..master --oneline
 ```
 

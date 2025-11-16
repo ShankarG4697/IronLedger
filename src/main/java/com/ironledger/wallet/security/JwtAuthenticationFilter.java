@@ -18,8 +18,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
@@ -29,6 +32,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final AuthSessionRepository authSessionRepository;
+
+    // Simple cache to avoid repeated DB queries for the same user within a short time window
+    private final Map<UUID, CachedUser> userCache = new ConcurrentHashMap<>();
+    private static final long CACHE_TTL_SECONDS = 60; // Cache for 1 minute
+
+    private static class CachedUser {
+        final User user;
+        final Instant cachedAt;
+
+        CachedUser(User user) {
+            this.user = user;
+            this.cachedAt = Instant.now();
+        }
+
+        boolean isExpired() {
+            return Instant.now().isAfter(cachedAt.plusSeconds(CACHE_TTL_SECONDS));
+        }
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -71,6 +92,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                                 SecurityContextHolder.getContext().setAuthentication(auth);
+                            } else {
+                                // Password version mismatch - invalidate cache
+                                userCache.remove(userId);
                             }
                         } else{
                             log.warn("JWT Filter: User session is invalid");
@@ -93,5 +117,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Get user from cache if available and not expired, otherwise fetch from database.
+     * This significantly reduces database queries for authenticated requests.
+     */
+    private User getUserFromCacheOrDatabase(UUID userId) {
+        CachedUser cached = userCache.get(userId);
+
+        // Check cache first
+        if (cached != null && !cached.isExpired()) {
+            return cached.user;
+        }
+
+        // Cache miss or expired - fetch from database
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            userCache.put(userId, new CachedUser(user));
+            return user;
+        }
+
+        // User not found - remove from cache if present
+        userCache.remove(userId);
+        return null;
     }
 }

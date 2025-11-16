@@ -21,13 +21,22 @@ development branch:
 
 master branch:
   d4c5f66 Merge pull request #4 (no parent - grafted history)
+  - Contains performance improvements from PR #4
+  - Has 6 additional files:
+    * CHANGES_SUMMARY.md
+    * PERFORMANCE.md
+    * PERFORMANCE_QUICK_START.md
+    * TokenHashUtil.java
+    * CustomPasswordEncoderTest.java
+    * TokenHashUtilTest.java
+  - Has modified versions of shared files with performance optimizations
 ```
 
 ## Recommended Solutions
 
 ### Option 1: Sync Development to Master (Recommended)
 
-If you want to keep both branches and maintain their current state, sync `development` to `master` by merging or rebasing:
+If you want to keep both branches and bring the performance improvements from `master` into `development`:
 
 ```bash
 # Switch to development branch
@@ -36,12 +45,24 @@ git checkout development
 # Merge master into development (preserves history)
 git merge master --allow-unrelated-histories
 
-# Or rebase development onto master (cleaner history)
-git rebase master
+# Resolve merge conflicts in:
+# - README.md
+# - AuthController.java
+# - AuthSession.java
+# - CustomPasswordEncoder.java
+# - JwtAuthenticationFilter.java
+# - AuthService.java
+# (These files have different implementations in each branch)
+
+# After resolving conflicts:
+git add .
+git commit -m "Merge master into development to sync performance improvements"
 
 # Push the changes
 git push origin development
 ```
+
+**Note:** This will require resolving conflicts in 6 files where both branches made different changes. The master branch has performance optimizations that should generally be kept during conflict resolution.
 
 After this, both branches will share a common history and you can create PRs in either direction.
 

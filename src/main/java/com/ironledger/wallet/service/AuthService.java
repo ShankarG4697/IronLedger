@@ -259,6 +259,7 @@ public class AuthService {
         }
 
         session.setRevokedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        session = authSessionRepository.save(session);
         return LOGOUT_SUCCESSFUL_MESSAGE;
     }
 }

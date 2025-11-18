@@ -1,6 +1,6 @@
 package com.ironledger.wallet.security;
 
-import com.ironledger.wallet.entity.AuthSession;
+import com.ironledger.wallet.context.RequestContextHolder;
 import com.ironledger.wallet.entity.User;
 import com.ironledger.wallet.repository.AuthSessionRepository;
 import com.ironledger.wallet.repository.UserRepository;
@@ -118,6 +118,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             UsernamePasswordAuthenticationToken auth = buildAuthentication(user, request);
+            RequestContextHolder.set(request.getRemoteAddr(), request.getHeader("User-Agent"));
             SecurityContextHolder.getContext().setAuthentication(auth);
 
         } catch (Exception e) {
@@ -125,6 +126,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.getWriter().write(MSG_TOKEN_INVALID);
             SecurityContextHolder.clearContext();
+            RequestContextHolder.clear();
         }
 
         filterChain.doFilter(request, response);
@@ -157,7 +159,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Get user from cache if available and not expired, otherwise fetch from database.
+     * Get user from cache if available and not expired, otherwise fetch from a database.
      * This significantly reduces database queries for authenticated requests.
      */
     private Optional<User> getUserFromCacheOrDatabase(UUID userId) {
@@ -167,7 +169,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return Optional.of(cached.user);
         }
 
-        // Cache miss or expired - fetch from database
+        // Cache miss or expired - fetch from a database
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isPresent()) {
             userCache.put(userId, new CachedUser(userOpt.get()));

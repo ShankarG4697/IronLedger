@@ -5,6 +5,7 @@ import com.ironledger.wallet.dto.AccountResponse;
 import com.ironledger.wallet.entity.User;
 import com.ironledger.wallet.security.JwtProvider;
 import com.ironledger.wallet.service.AccountService;
+import com.ironledger.wallet.utils.AuthenticationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
-    private final JwtProvider jwtProvider;
+
+    private UUID userId(Authentication authentication) {
+        return AuthenticationUtils.resolveUserIdFromAuthentication(authentication);
+    }
 
     // -------------------------------------------------------------------------
     // CREATE ACCOUNT
@@ -29,8 +33,7 @@ public class AccountController {
             Authentication auth,
             @Valid @RequestBody AccountCreateRequest req
     ) {
-        UUID userId = resolveUserIdFromAuthentication(auth);
-        return ResponseEntity.ok(accountService.createAccount(userId, req));
+        return ResponseEntity.ok(accountService.createAccount(userId(auth), req));
     }
 
     // -------------------------------------------------------------------------
@@ -38,8 +41,7 @@ public class AccountController {
     // -------------------------------------------------------------------------
     @GetMapping
     public ResponseEntity<List<AccountResponse>> getMyAccounts(Authentication auth) {
-        UUID userId = resolveUserIdFromAuthentication(auth);
-        return ResponseEntity.ok(accountService.listAccounts(userId));
+        return ResponseEntity.ok(accountService.listAccounts(userId(auth)));
     }
 
     // -------------------------------------------------------------------------
@@ -50,23 +52,6 @@ public class AccountController {
             Authentication auth,
             @PathVariable UUID accountId
     ) {
-        UUID userId = resolveUserIdFromAuthentication(auth);
-        return ResponseEntity.ok(accountService.getAccount(userId, accountId));
-    }
-
-    // -------------------------------------------------------------------------
-    // INTERNAL — Resolve user UUID from Authentication principal
-    // Customize based on your security implementation
-    // -------------------------------------------------------------------------
-    private UUID resolveUserIdFromAuthentication(Authentication auth) {
-        if (auth == null || auth.getPrincipal() == null) {
-            throw new IllegalStateException("Unauthenticated request");
-        }
-
-        if (auth.isAuthenticated() && auth.getPrincipal() instanceof User user) {
-            return user.getId();
-        }
-
-        throw new IllegalStateException("Unable to resolve userId from principal");
+        return ResponseEntity.ok(accountService.getAccount(userId(auth), accountId));
     }
 }

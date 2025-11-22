@@ -1,4 +1,4 @@
-package com.ironledger.wallet.dto;
+package com.ironledger.wallet.dto.Ledger;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;

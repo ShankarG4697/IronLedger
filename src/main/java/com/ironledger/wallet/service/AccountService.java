@@ -1,7 +1,7 @@
 package com.ironledger.wallet.service;
 
-import com.ironledger.wallet.dto.AccountCreateRequest;
-import com.ironledger.wallet.dto.AccountResponse;
+import com.ironledger.wallet.dto.Account.AccountCreateRequest;
+import com.ironledger.wallet.dto.Account.AccountResponse;
 import com.ironledger.wallet.entity.Account;
 import com.ironledger.wallet.exception.DuplicateResourceException;
 import com.ironledger.wallet.exception.ResourceNotFoundException;

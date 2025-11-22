@@ -1,8 +1,8 @@
 package com.ironledger.wallet.service;
 
 import com.ironledger.wallet.context.RequestContextHolder;
-import com.ironledger.wallet.dto.AmountRequest;
-import com.ironledger.wallet.dto.LedgerResponse;
+import com.ironledger.wallet.dto.Ledger.AmountRequest;
+import com.ironledger.wallet.dto.Ledger.LedgerResponse;
 import com.ironledger.wallet.entity.Account;
 import com.ironledger.wallet.entity.LedgerTransaction;
 import com.ironledger.wallet.exception.InvalidRequestException;
@@ -283,7 +283,7 @@ public class LedgerService {
     // -------------------------------------------------------------------------
     // WRITE LEDGER
     // -------------------------------------------------------------------------
-    private LedgerTransaction writeLedger(Account account, long amount, String type, int status, String referenceId, String currency) {
+    public LedgerTransaction writeLedger(Account account, long amount, String type, int status, String referenceId, String currency) {
         Map<String, Object> meta = MetaBuilder.buildBaseMeta(
                 type,
                 RequestContextHolder.getIp(),
@@ -313,7 +313,7 @@ public class LedgerService {
     // -------------------------------------------------------------------------
     // Reference ID Generation
     // -------------------------------------------------------------------------
-    private String generateReferenceId() {
+    public String generateReferenceId() {
         for (int i = 0; i < 5; i++) {
             String refId = RefIdGenerator.generateRefId();
             if (ledgerRepository.findByReferenceId(refId).isEmpty()) {

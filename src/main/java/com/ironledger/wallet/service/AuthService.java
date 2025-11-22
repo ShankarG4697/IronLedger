@@ -1,6 +1,7 @@
 package com.ironledger.wallet.service;
 
-import com.ironledger.wallet.dto.*;
+import com.ironledger.wallet.dto.Auth.*;
+import com.ironledger.wallet.dto.User.UserDto;
 import com.ironledger.wallet.entity.AuthSession;
 import com.ironledger.wallet.entity.LoginAudit;
 import com.ironledger.wallet.entity.User;

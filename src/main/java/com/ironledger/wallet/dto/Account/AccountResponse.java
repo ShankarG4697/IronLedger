@@ -1,4 +1,4 @@
-package com.ironledger.wallet.dto;
+package com.ironledger.wallet.dto.Account;
 
 
 import com.ironledger.wallet.entity.Account;

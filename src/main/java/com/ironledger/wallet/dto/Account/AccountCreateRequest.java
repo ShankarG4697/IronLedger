@@ -1,4 +1,4 @@
-package com.ironledger.wallet.dto;
+package com.ironledger.wallet.dto.Account;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

@@ -1,9 +1,7 @@
 package com.ironledger.wallet.controller;
 
-import com.ironledger.wallet.dto.AccountCreateRequest;
-import com.ironledger.wallet.dto.AccountResponse;
-import com.ironledger.wallet.entity.User;
-import com.ironledger.wallet.security.JwtProvider;
+import com.ironledger.wallet.dto.Account.AccountCreateRequest;
+import com.ironledger.wallet.dto.Account.AccountResponse;
 import com.ironledger.wallet.service.AccountService;
 import com.ironledger.wallet.utils.AuthenticationUtils;
 import jakarta.validation.Valid;

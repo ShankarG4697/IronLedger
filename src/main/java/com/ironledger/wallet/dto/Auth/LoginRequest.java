@@ -1,4 +1,4 @@
-package com.ironledger.wallet.dto;
+package com.ironledger.wallet.dto.Auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

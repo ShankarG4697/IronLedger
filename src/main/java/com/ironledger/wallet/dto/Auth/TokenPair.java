@@ -1,12 +1,11 @@
-package com.ironledger.wallet.dto;
+package com.ironledger.wallet.dto.Auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class AuthResponse {
-    private UserDto user;
+public class TokenPair {
     private String accessToken;
     private String refreshToken;
 }

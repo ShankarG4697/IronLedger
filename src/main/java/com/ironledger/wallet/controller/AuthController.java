@@ -1,10 +1,9 @@
 package com.ironledger.wallet.controller;
 
-import com.ironledger.wallet.dto.*;
+import com.ironledger.wallet.dto.Auth.*;
 import com.ironledger.wallet.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

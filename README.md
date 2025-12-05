@@ -41,8 +41,6 @@ IronLedger has been optimized for production-grade performance:
 * **Efficient Database Queries** – Strategic indexes on frequently queried columns
 * **Scalable Architecture** – Handles 5x more concurrent users with same resources
 
-See [PERFORMANCE.md](PERFORMANCE.md) for detailed technical documentation.
-
 ---
 
 ## 🛠️ Development Phases

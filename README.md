@@ -47,7 +47,7 @@ See [PERFORMANCE.md](PERFORMANCE.md) for detailed technical documentation.
 
 ## 🛠️ Development Phases
 
-### **Phase 1 — Core Ledger (Current)**
+### **Phase 1 — Core Ledger (Completed)**
 
 * Create accounts
 * Perform transfers
@@ -55,7 +55,7 @@ See [PERFORMANCE.md](PERFORMANCE.md) for detailed technical documentation.
 * Idempotency key support
 * Basic REST APIs
 
-### **Phase 2 — Reconciliation**
+### **Phase 2 — Reconciliation (In Progress)**
 
 * Compare internal vs external records
 * Identify mismatches
